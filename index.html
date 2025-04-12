@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Órarend</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    input { margin: 0.5rem 0; padding: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Órarend</h1>
+  
+  <form id="addForm">
+    <input name="day" placeholder="Nap (pl. Hétfő)" required>
+    <input name="hour" type="number" placeholder="Óra" required>
+    <input name="subject" placeholder="Tantárgy" required>
+    <button type="submit">Hozzáadás</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nap</th>
+        <th>Óra</th>
+        <th>Tantárgy</th>
+        <th>Művelet</th>
+      </tr>
+    </thead>
+    <tbody id="scheduleBody"></tbody>
+  </table>
+
+  <script>
+    async function loadSchedule() {
+      const res = await fetch('/schedule');
+      const schedule = await res.json();
+      const body = document.getElementById('scheduleBody');
+      body.innerHTML = '';
+      schedule.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.day}</td>
+          <td>${item.hour}</td>
+          <td>${item.subject}</td>
+          <td>
+            <button onclick="deleteItem(${item.id})">🗑️</button>
+          </td>
+        `;
+        body.appendChild(row);
+      });
+    }
+
+    async function deleteItem(id) {
+      await fetch('/schedule/' + id, { method: 'DELETE' });
+      loadSchedule();
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = {
+        day: formData.get('day'),
+        hour: +formData.get('hour'),
+        subject: formData.get('subject')
+      };
+      await fetch('/schedule', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      e.target.reset();
+      loadSchedule();
+    });
+
+    loadSchedule();
+  </script>
+</body>
+</html>
