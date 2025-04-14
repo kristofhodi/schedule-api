@@ -45,6 +45,20 @@ app.delete("/schedule/:id", async (req, res) => {
     await dbRun("DELETE FROM schedule WHERE id = ?", [id]);
     res.status(200).json({ message: "delete successful" });
 });
+app.put("/schedule/:id", async (req, res) => {
+    const id = req.params.id;
+    const existing = await dbGet("SELECT * FROM schedule WHERE id = ?", [id]);
+    if (!existing) return res.status(404).json({ message: "not found" });
+
+    const { day, hour, subject } = req.body;
+    if (!day || !hour || !subject) {
+        return res.status(400).json({ message: "missing data" });
+    }
+
+    await dbRun("UPDATE schedule SET day = ?, hour = ?, subject = ? WHERE id = ?", [day, hour, subject, id]);
+    res.status(200).json({ id: +id, day, hour, subject });
+});
+
 
 async function startServer() {
     await initializeDatabase();
